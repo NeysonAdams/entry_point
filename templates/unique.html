@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Redirect Page</title>
+</head>
+<body>
+<script>
+    // Функция для генерации или получения уникального ID устройства.
+    // В реальном применении вы можете брать этот ID с сервера или генерировать один раз и хранить в localStorage.
+    function getDeviceId() {
+        let deviceId = localStorage.getItem('device_id');
+        if (!deviceId) {
+            deviceId = crypto.randomUUID(); // Генерируем уникальный ID (требуется современный браузер)
+            localStorage.setItem('device_id', deviceId);
+        }
+        return deviceId;
+    }
+
+    // Предполагается, что ссылка задаётся сервером или известна заранее.
+    // Например, пусть это будет следующий URL:
+    let serverUrl = {{link}};
+
+    // Получаем уникальный айди устройства
+    const deviceId = getDeviceId();
+
+    // Формируем конечный адрес с параметром device_id
+    const targetUrl = serverUrl + "?device_id=" + encodeURIComponent(deviceId);
+
+    // Делаем редирект
+    window.location.href = targetUrl;
+
+    // Попытка закрыть вкладку (скорее всего не сработает, если вкладка была открыта не скриптом)
+    // Если вам нужно гарантированно закрыть окно, откройте эту страницу через window.open() из другой вкладки, затем сделайте редирект и закройте.
+    window.close();
+</script>
+</body>
+</html>

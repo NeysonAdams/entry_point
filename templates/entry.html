@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>{{ title }}</title>
+    <style>
+        body {
+            font-family: sans-serif;
+        }
+        #qr-image {
+            width: 200px;
+            height: 200px;
+        }
+    </style>
+</head>
+<body>
+    <h1>{{ title }}</h1>
+    <p>{{ description }}</p>
+    <div>Оставшееся время: <span id="timer"></span></div>
+    <img id="qr-image" src="{{ qr_link }}" alt="QR code" />
+
+    <script>
+        // Исходное время (в секундах) получаем от сервера
+        let totalTime = {{ total_time }};
+        const errorUrl = "{{ error_url }}";
+        const timerEl = document.getElementById('timer');
+        const qrImage = document.getElementById('qr-image');
+
+        // Функция обновления таймера
+        function updateTimer() {
+            if (totalTime <= 0) {
+                // Время истекло — перенаправляем на страницу ошибки
+                window.location.href = errorUrl;
+                return;
+            }
+
+            totalTime--;
+            const minutes = Math.floor(totalTime / 60);
+            const seconds = totalTime % 60;
+            timerEl.textContent = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+        }
+
+        // Функция обновления QR-кода каждые 30 секунд
+        function refreshQR() {
+            const qrBaseLink = "{{ qr_link }}";
+            // Добавляем параметр с текущим временем, чтобы избежать кеширования
+            const newLink = qrBaseLink + '?t=' + Date.now();
+            qrImage.src = newLink;
+        }
+
+        // Обновляем таймер каждую секунду
+        setInterval(updateTimer, 1000);
+        // Обновляем QR-код каждые 30 секунд (30 000 мс)
+        setInterval(refreshQR, 30 * 1000);
+
+        // Инициализируем таймер сразу при загрузке страницы
+        updateTimer();
+    </script>
+</body>
+</html>
