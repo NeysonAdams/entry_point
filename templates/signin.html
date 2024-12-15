@@ -4,25 +4,73 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <title>{{ title }}</title>
+    <style>
+      body, html {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        font-family: sans-serif;
+        background: #f9f9f9;
+      }
+
+      .container {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        height: 100%;
+      }
+
+      h1 {
+        margin-bottom: 20px;
+        font-size: 24px;
+        color: #333;
+      }
+
+      p {
+        margin-bottom: 40px;
+        color: #555;
+      }
+
+      #qrCode img {
+        border: 2px solid #ccc;
+        border-radius: 8px;
+      }
+
+      #redirectButton {
+        margin-top: 20px;
+        padding: 10px 20px;
+        background: #007bff;
+        color: #fff;
+        border: none;
+        border-radius: 4px;
+        cursor: pointer;
+      }
+
+      #redirectButton:hover {
+        background: #0056b3;
+      }
+    </style>
     <script>
       const status = '{{ status }}';
     </script>
   </head>
   <body>
-    <h1>{{ title }}</h1>
-    <p>{{ description }}</p>
-    <div id="qrCode">Loading QR Code...</div>
-    <button id="redirectButton" style="display:none;">Continue</button>
+    <div class="container">
+      <h1>{{ title }}</h1>
+      <p>{{ description }}</p>
+      <div id="qrCode">Loading QR Code...</div>
+      <button id="redirectButton" style="display:none;">Continue</button>
+    </div>
+
     <script>
       async function getQRCode() {
-        // Generate a unique device ID (using a combination of user agent and random value for simplicity)
-
         try {
-          // Request QR code and redirect link from the server
           const statusResponse = await fetch(`/qr?status=${status}`);
           const data = await statusResponse.json();
 
-          // Set the QR code image and redirect link
+          console.log(data.redirect_url);
+
           document.getElementById('qrCode').innerHTML = `<img src="${data.qr_code_url}" alt="QR Code">`;
           const redirectButton = document.getElementById('redirectButton');
           redirectButton.style.display = 'block';
@@ -30,11 +78,11 @@
             window.location.href = data.redirect_url;
           };
         } catch (error) {
+          console.log(error);
           document.getElementById('qrCode').innerHTML = 'Failed to load QR Code. Please try again later.';
         }
       }
 
-      // Load the QR code when the page is ready
       window.onload = getQRCode;
     </script>
   </body>

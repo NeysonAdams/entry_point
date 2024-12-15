@@ -15,17 +15,17 @@ class User(db.Model, UserMixin):
     role = db.Column(db.String(255))
     registration_step=db.Column(db.String(255))
 
-    access_point = db.relationship('AccessPoint', backref='user_subscription', uselist=False)
+    access_point = db.relationship('Accesspoint', backref='user_subscription', uselist=False)
     def __str__(self):
         return self.name
 
 
 access_point_users = db.Table('access_point_users',
     db.Column('user_id', db.Integer, db.ForeignKey('user.id'), primary_key=True),
-    db.Column('accessPoint_id', db.Integer, db.ForeignKey('accessPoint.id'), primary_key=True)
+    db.Column('accesspoint_id', db.Integer, db.ForeignKey('accesspoint.id'), primary_key=True)
 )
 
-class AccessPoint(db.Model):
+class Accesspoint(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     creation_date=db.Column(db.DateTime)
     longitude = db.Column(db.String(255))
@@ -33,4 +33,11 @@ class AccessPoint(db.Model):
 
     students = db.relationship('User', secondary=access_point_users, backref=db.backref('users', lazy='dynamic'))
 
-    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=True)
+    creator_id = db.Column(db.Integer, db.ForeignKey('user.id'), unique=False)
+
+
+class Bantable(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    time = db.Column(db.DateTime)
+    user_tg_id = db.Column(db.String(255))
+    access_point_id = db.Column(db.Integer)

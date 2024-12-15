@@ -7,33 +7,33 @@
 </head>
 <body>
 <script>
-    // Функция для генерации или получения уникального ID устройства.
-    // В реальном применении вы можете брать этот ID с сервера или генерировать один раз и хранить в localStorage.
     function getDeviceId() {
         let deviceId = localStorage.getItem('device_id');
         if (!deviceId) {
-            deviceId = crypto.randomUUID(); // Генерируем уникальный ID (требуется современный браузер)
+            if (crypto && crypto.randomUUID) {
+                deviceId = crypto.randomUUID();
+            } else {
+                deviceId = Math.random().toString(36).substring(2, 15);
+            }
             localStorage.setItem('device_id', deviceId);
         }
         return deviceId;
     }
 
-    // Предполагается, что ссылка задаётся сервером или известна заранее.
-    // Например, пусть это будет следующий URL:
-    let serverUrl = {{link}};
+    // Убедитесь, что "{{ link }}" возвращает строку из вашего шаблона, например: "http://example.com"
+    let serverUrl = "{{ link }}";
 
-    // Получаем уникальный айди устройства
     const deviceId = getDeviceId();
 
-    // Формируем конечный адрес с параметром device_id
-    const targetUrl = serverUrl + "?device_id=" + encodeURIComponent(deviceId);
+    const targetUrl = serverUrl + "&device_id=" + encodeURIComponent(deviceId);
 
-    // Делаем редирект
-    window.location.href = targetUrl;
+    console.log(targetUrl);
 
-    // Попытка закрыть вкладку (скорее всего не сработает, если вкладка была открыта не скриптом)
-    // Если вам нужно гарантированно закрыть окно, откройте эту страницу через window.open() из другой вкладки, затем сделайте редирект и закройте.
-    window.close();
+    setTimeout(() => {
+      window.location.replace(targetUrl);
+    }, 500);
 </script>
+<script src="https://cdn.jsdelivr.net/npm/eruda"></script>
+<script>eruda.init();</script>
 </body>
 </html>

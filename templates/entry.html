@@ -3,29 +3,152 @@
 <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>{{ title }}</title>
+    <title>QR Code Page</title>
     <style>
-        body {
-            font-family: sans-serif;
+        /* Сброс некоторых стандартных стилей браузера */
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
         }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #f5f7fa, #c3cfe2);
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .container {
+            background-color: rgba(255, 255, 255, 0.9);
+            padding: 30px 40px;
+            border-radius: 15px;
+            box-shadow: 0 8px 16px rgba(0,0,0,0.1);
+            text-align: center;
+            max-width: 400px;
+            width: 90%;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-bottom: 15px;
+            color: #333;
+        }
+
+        p {
+            font-size: 1.1em;
+            margin-bottom: 25px;
+            color: #555;
+        }
+
+        #timer {
+            display: inline-block;
+            font-size: 1.5em;
+            margin-bottom: 20px;
+            color: #ff4d4d;
+            font-weight: bold;
+        }
+
         #qr-image {
-            width: 200px;
-            height: 200px;
+            display: block;           /* Делает изображение блочным элементом */
+            margin: 0 auto;           /* Центрирует изображение по горизонтали */
+            width: 250px;
+            height: 250px;
+            border: 5px solid #4CAF50;
+            border-radius: 15px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s ease;
+        }
+
+        #qr-image:hover {
+            transform: scale(1.05);
+            box-shadow: 0 8px 16px rgba(0,0,0,0.2);
+        }
+
+        /* Мобильная адаптация */
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px 25px;
+            }
+
+            h1 {
+                font-size: 1.5em;
+            }
+
+            p {
+                font-size: 1em;
+            }
+
+            #timer {
+                font-size: 1.3em;
+            }
+
+            #qr-image {
+                width: 200px;
+                height: 200px;
+            }
         }
     </style>
 </head>
 <body>
-    <h1>{{ title }}</h1>
-    <p>{{ description }}</p>
-    <div>Оставшееся время: <span id="timer"></span></div>
-    <img id="qr-image" src="{{ qr_link }}" alt="QR code" />
+    <div class="container">
+        <h1 id="title">Загрузка...</h1>
+        <p id="description">Пожалуйста, подождите.</p>
+        <div>Оставшееся время: <span id="timer">--:--</span></div>
+        <img id="qr-image" src="" alt="QR code" style="display: none;" />
+    </div>
 
     <script>
-        // Исходное время (в секундах) получаем от сервера
-        let totalTime = {{ total_time }};
-        const errorUrl = "{{ error_url }}";
+        // Замените '123' на реальный point_id или получите его динамически
+        const pointId = '123';
+        const apiEndpoint = `/qr/key/${pointId}`;
+        const errorUrl = "/error"; // Страница ошибки
+
         const timerEl = document.getElementById('timer');
         const qrImage = document.getElementById('qr-image');
+        const titleEl = document.getElementById('title');
+        const descriptionEl = document.getElementById('description');
+
+        let totalTime = 300; // Исходное время в секундах (например, 5 минут)
+        let qrBaseLink = '';
+
+        // Функция для получения данных с сервера
+        async function fetchData() {
+            try {
+                const response = await fetch(apiEndpoint);
+                if (!response.ok) {
+                    throw new Error(`Ошибка: ${response.status} ${response.statusText}`);
+                }
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('Ошибка при получении данных:', error);
+                alert('Не удалось загрузить данные. Попробуйте позже.');
+                window.location.href = errorUrl;
+            }
+        }
+
+        // Функция для инициализации страницы
+        async function initializePage() {
+            const data = await fetchData();
+            if (!data) return;
+
+            // Обновляем заголовок и описание, если необходимо
+            titleEl.textContent = "Ваш QR-код";
+            descriptionEl.textContent = "Сканируйте QR-код для продолжения.";
+
+            // Устанавливаем QR-код
+            qrImage.src = data.qr_code_url;
+            qrImage.style.display = 'block';
+
+            // Устанавливаем базовую ссылку для обновления QR-кода
+            qrBaseLink = data.redirect_url;
+
+            // Настраиваем таймер (можно получить из данных, если сервер предоставляет)
+            // Например, totalTime = data.total_time || 300;
+        }
 
         // Функция обновления таймера
         function updateTimer() {
@@ -38,24 +161,34 @@
             totalTime--;
             const minutes = Math.floor(totalTime / 60);
             const seconds = totalTime % 60;
-            timerEl.textContent = minutes.toString().padStart(2, '0') + ':' + seconds.toString().padStart(2, '0');
+            timerEl.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
         }
 
         // Функция обновления QR-кода каждые 30 секунд
-        function refreshQR() {
-            const qrBaseLink = "{{ qr_link }}";
-            // Добавляем параметр с текущим временем, чтобы избежать кеширования
-            const newLink = qrBaseLink + '?t=' + Date.now();
-            qrImage.src = newLink;
+        async function refreshQR() {
+            try {
+                const data = await fetchData();
+                if (!data) return;
+
+                // Обновляем QR-код
+                qrImage.src = `${data.qr_code_url}?t=${Date.now()}`;
+
+                // Обновляем базовую ссылку
+                qrBaseLink = data.redirect_url;
+            } catch (error) {
+                console.error('Ошибка при обновлении QR-кода:', error);
+            }
         }
 
-        // Обновляем таймер каждую секунду
-        setInterval(updateTimer, 1000);
-        // Обновляем QR-код каждые 30 секунд (30 000 мс)
-        setInterval(refreshQR, 30 * 1000);
+        // Инициализируем страницу при загрузке
+        window.addEventListener('DOMContentLoaded', (event) => {
+            initializePage();
 
-        // Инициализируем таймер сразу при загрузке страницы
-        updateTimer();
+            // Обновляем таймер каждую секунду
+            setInterval(updateTimer, 1000);
+            // Обновляем QR-код каждые 30 секунд
+            setInterval(refreshQR, 30 * 1000);
+        });
     </script>
 </body>
 </html>
